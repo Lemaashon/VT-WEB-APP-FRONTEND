@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IFC to Excel</title>
+</head>
+<body>
+
+<h2>Upload IFC Files</h2>
+
+<input type="file" id="fileInput" multiple />
+<button onclick="uploadFiles()">Upload & Download Excel</button>
+
+<script>
+async function uploadFiles() {
+    const input = document.getElementById("fileInput");
+    const files = input.files;
+
+    if (files.length === 0) {
+        alert("Please select files");
+        return;
+    }
+
+    const formData = new FormData();
+
+    for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+    }
+
+    const response = await fetch("http://127.0.0.1:8000/upload-ifc/", {
+        method: "POST",
+        body: formData
+    });
+
+    if (!response.ok) {
+        alert("Error processing files");
+        return;
+    }
+
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "Extracted_Data.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+</script>
+
+</body>
+</html>
