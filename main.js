@@ -59,3 +59,11 @@ async function uploadFiles() {
     btn.disabled = false;
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fileInput').addEventListener('change', updateFileList);
+  document.getElementById('uploadBtn').addEventListener('click', uploadFiles);
+  document.querySelector('.drop-zone').addEventListener('click', () => {
+    document.getElementById('fileInput').click();
+  });
+});

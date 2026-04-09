@@ -2,19 +2,19 @@
 <html>
 <head>
   <title>IFC to Excel</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <div class="card">
   <h2>IFC to Excel</h2>
-  <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+    <div class="drop-zone">
     <p>&#8613; Click to select a folder</p>
-    <input type="file" id="fileInput" webkitdirectory style="display:none" onchange="updateFileList()"/>
-  </div>
-  <div class="file-list" id="fileList">No folder selected</div>
-  <button id="uploadBtn" onclick="uploadFiles()" disabled>Upload &amp; download Excel</button>
+    <input type="file" id="fileInput" webkitdirectory style="display:none"/>
+    </div>
+    <div class="file-list" id="fileList">No folder selected</div>
+    <button id="uploadBtn" disabled>Upload &amp; download Excel</button>
   <div id="status" style="display:none"></div>
 </div>
-<script src="main.js"></script>
+<script type="module" src="./main.js"></script>
 </body>
 </html>
