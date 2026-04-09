@@ -1,53 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>IFC to Excel</title>
+  <title>IFC to Excel</title>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 3rem auto; padding: 0 1.5rem; }
+    .card { border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.5rem; }
+    h2 { font-size: 18px; font-weight: 500; margin: 0 0 1.25rem; }
+    .drop-zone { border: 1.5px dashed #ccc; border-radius: 8px; padding: 2rem 1rem; text-align: center; cursor: pointer; margin-bottom: 1rem; }
+    .drop-zone:hover { background: #f9f9f9; }
+    .drop-zone p { margin: 0; font-size: 14px; color: #666; }
+    .file-list { font-size: 13px; color: #666; margin-bottom: 1rem; min-height: 20px; }
+    .file-list span { display: inline-block; background: #f2f2f2; border-radius: 6px; padding: 3px 10px; margin: 2px 4px 2px 0; }
+    button { width: 100%; padding: 10px; font-size: 14px; font-weight: 500; border-radius: 8px; border: 1px solid #ccc; background: transparent; cursor: pointer; }
+    button:hover:not(:disabled) { background: #f5f5f5; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .status { margin-top: 1.25rem; display: flex; align-items: center; gap: 10px; font-size: 14px; color: #555; }
+    .spinner { width: 18px; height: 18px; border: 2px solid #ddd; border-top-color: #555; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .success { color: green; font-size: 14px; margin-top: 1.25rem; }
+    .error   { color: red;   font-size: 14px; margin-top: 1.25rem; }
+  </style>
 </head>
 <body>
-
-<h2>Upload IFC Files</h2>
-
-<input type="file" id="fileInput" multiple />
-<button onclick="uploadFiles()">Upload & Download Excel</button>
+<div class="card">
+  <h2>IFC to Excel</h2>
+  <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+    <p>&#8613; Click to select a folder</p>
+    <input type="file" id="fileInput" webkitdirectory style="display:none" onchange="updateFileList()"/>
+  </div>
+  <div class="file-list" id="fileList">No files selected</div>
+  <button id="uploadBtn" onclick="uploadFiles()" disabled>Upload & download Excel</button>
+  <div id="status" style="display:none"></div>
+</div>
 
 <script>
+function updateFileList() {
+  const allFiles = Array.from(document.getElementById('fileInput').files);
+  const ifcFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.ifc'));
+  const list = document.getElementById('fileList');
+  const btn  = document.getElementById('uploadBtn');
+
+  if (ifcFiles.length === 0) {
+    list.textContent = allFiles.length > 0
+      ? 'No IFC files found in that folder.'
+      : 'No folder selected';
+    btn.disabled = true;
+  } else {
+    list.innerHTML = ifcFiles.map(f => `<span>${f.name}</span>`).join('');
+    btn.disabled = false;
+  }
+  return ifcFiles;
+}
+
+function setStatus(type, msg) {
+  const el = document.getElementById('status');
+  el.style.display = 'flex';
+  if (type === 'loading') {
+    el.className = 'status';
+    el.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+  } else if (type === 'success') {
+    el.className = 'success';
+    el.style.display = 'block';
+    el.innerHTML = `&#10003; ${msg}`;
+  } else {
+    el.className = 'error';
+    el.style.display = 'block';
+    el.innerHTML = `&#10007; ${msg}`;
+  }
+}
+
 async function uploadFiles() {
-    const input = document.getElementById("fileInput");
-    const files = input.files;
+  const allFiles = Array.from(document.getElementById('fileInput').files);
+  const ifcFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.ifc'));
+  const btn = document.getElementById('uploadBtn');
+  if (ifcFiles.length === 0) return;
 
-    if (files.length === 0) {
-        alert("Please select files");
-        return;
-    }
+  btn.disabled = true;
+  const formData = new FormData();
+  for (const f of ifcFiles) formData.append('files', f);
 
-    const formData = new FormData();
-
-    for (let i = 0; i < files.length; i++) {
-        formData.append("files", files[i]);
-    }
-
-    const response = await fetch("https://vt-web-app-backend-production.up.railway.app/upload-ifc", {
-        method: "POST",
-        body: formData
+  try {
+    setStatus('loading', 'Uploading files...');
+    const response = await fetch('https://vt-web-app-backend-production.up.railway.app/upload-ifc', {
+      method: 'POST',
+      body: formData
     });
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
-    if (!response.ok) {
-        alert("Error processing files");
-        return;
-    }
-
+    setStatus('loading', 'Preparing your Excel file...');
     const blob = await response.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'Extracted_Data.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
 
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-
-    a.href = url;
-    a.download = "Extracted_Data.xlsx";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    setStatus('success', 'Excel file downloaded successfully.');
+  } catch (err) {
+    setStatus('error', err.message || 'Something went wrong.');
+  } finally {
+    btn.disabled = false;
+  }
 }
 </script>
-
 </body>
 </html>
